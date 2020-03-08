@@ -87,38 +87,40 @@ def generate_test_train_set(root_rgb):
 
     _, dirs, _ = os.walk(root_rgb).__next__()
 
+
     for d in dirs:
-        print('Reading %s' % d)
-        img_dir = os.path.join(root_rgb, d)
-        _, _, rgb_files = os.walk(img_dir).__next__()
+        if(d != '.git'):
+          print('Reading %s' % d)
+          img_dir = os.path.join(root_rgb, d)
+          _, _, rgb_files = os.walk(img_dir).__next__()
 
-        random.shuffle(rgb_files)
+          random.shuffle(rgb_files)
 
-        for rgb_f in rgb_files:
-            filename = os.path.join(img_dir, rgb_f)
-            print('Reading %s' % rgb_f)
+          for rgb_f in rgb_files:
+              filename = os.path.join(img_dir, rgb_f)
+              print('Reading %s' % rgb_f)
 
-            # Read the labels
-            label_name = str.split(rgb_f, '.')[0]
-            #label = label_name[:-2]
-            label = str.split(label_name, '_')[0]
-            class_label = class_dict.get(label)
+              # Read the labels
+              label_name = str.split(rgb_f, '.')[0]
+              #label = label_name[:-2]
+              label = str.split(label_name, '_')[0]
+              class_label = class_dict.get(label)
 
 
-            # Save the file in jpg format
-            img = Image.open(filename)
-            img.thumbnail(img.size)
-            filename_jpg = label_name+'.jpg'
-            save_path = os.path.join(FLAGS.dump_dir, filename_jpg)
-            img.save(save_path, "JPEG", quality=100)
-            feature_out = extract_feature(image_filename=save_path)
-            os.remove(save_path) # delete the file after extracting feature
+              # Save the file in jpg format
+              img = Image.open(filename)
+              img.thumbnail(img.size)
+              filename_jpg = label_name+'.jpg'
+              save_path = os.path.join(FLAGS.dump_dir, filename_jpg)
+              img.save(save_path, "JPEG", quality=100)
+              feature_out = extract_feature(image_filename=save_path)
+              os.remove(save_path) # delete the file after extracting feature
 
-            # append in the list with order
-            # [feature, class_label, image_path]
-            print('Class Label: %d' % class_label)
-            print('Filename: %s ' % filename)
-            features.append([feature_out, class_label, filename])
+              # append in the list with order
+              # [feature, class_label, image_path]
+              #print('Class Label: %d' % class_label)
+              #print('Filename: %s ' % filename)
+              features.append([feature_out, class_label, filename])
     return features
 
 def main_graph(self):
