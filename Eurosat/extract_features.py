@@ -1,5 +1,4 @@
 import os
-import tensorflow as tf
 import tensorflow.compat.v1 as tf
 import tensorflow.python.platform
 from tensorflow.python.platform import gfile
