@@ -107,9 +107,6 @@ def triplet_loss(embeddings_0, anchor, positive, negative, alpha):
     return combined_loss
 
 def train(self):
-    nrof_samples_per_class = 100
-    nrof_train_per_class = int(round(FLAGS.train_test_split * 100))
-
     all_samples = tf.compat.v1.placeholder(tf.float32, shape=[None, NUM_FEATURES])
     sigmoid_activations = main_network(all_samples)
     embeddings = tf.nn.l2_normalize(sigmoid_activations, 1, 1e-10, name='embeddings')
@@ -148,17 +145,52 @@ def train(self):
         test_embeddings = np.empty((0, FLAGS.HASH_BITS)).astype(np.int8)
         test_single_labels = np.empty((0,))
 
+        features_ar = np.empty((0, NUM_FEATURES))
+        labels_ar = np.empty((0,))
+        paths = []
+
+        if not os.path.exists('dump_dir/'):
+            os.mkdir('dump_dir/')
+
+        print('Preparing test embeddings...')
+
+        for idx in range(len(features)):
+            feature = features[idx][0]
+            label = features[idx][1]
+            path = features[idx][2]
+
+            features_ar = np.append(features_ar, np.reshape(feature, newshape=(-1, NUM_FEATURES)), axis=0)
+            labels_ar = np.append(labels_ar, [label, ], axis=0)
+            paths.append(path)
+
+
         start_idx = 0
         for idx_class in range(CLASSES):
-            end_idx = (idx_class + 1) * nrof_samples_per_class
-            class_features = features[start_idx:end_idx]
+            class_label_idxs = np.where(labels_ar == idx_class)[0]
+            nrof_samples_in_class = len(class_label_idxs)
+            nrof_train_samples = int(np.ceil(FLAGS.train_test_split * nrof_samples_in_class))
+            nrof_test_samples = nrof_samples_in_class - nrof_train_samples
+            end_idx = start_idx + nrof_samples_in_class
 
-            test_class_features = class_features[nrof_train_per_class:]
+            # test data
+            class_features_test = features_ar[class_label_idxs[nrof_train_samples:], :]
+            class_labels_test = labels_ar[class_label_idxs[nrof_train_samples:]]
+            class_paths_test = []
+            for _, idx in enumerate(class_label_idxs[nrof_train_samples:]):
+                class_paths_test.append(paths[idx])
 
-            for idx in range(len(test_class_features)):
-                test_input = test_class_features[idx][0]
-                test_single_label = test_class_features[idx][1]
-                test_img_path = test_class_features[idx][2]
+            for i in range(nrof_test_samples):
+                test_input = class_features_test[i,:]
+                test_single_label = class_labels_test[i]
+                test_img_path = class_paths_test[i]
+
+                # Store the embedding
+                test_embedding = session.run(sigmoid_activations, feed_dict={all_samples: np.reshape(test_input, newshape=(-1, NUM_FEATURES))})
+                test_embedding = ((np.sign(test_embedding - 0.5) + 1) / 2)
+                test_embeddings = np.append(test_embeddings, test_embedding.astype(np.int8), axis=0)
+
+                # Store the label
+                test_single_labels = np.append(test_single_labels, [test_single_label, ], axis=0)
 
                 # Store the image
                 img = Image.open(test_img_path)
@@ -169,15 +201,11 @@ def train(self):
                 img = np.array(Image.open(read_image_path), dtype=int) / 256.
                 img = np.reshape(img, [-1, IMG_SIZE, IMG_SIZE, NUM_CHANNELS])
                 test_images = np.append(test_images, img, axis=0)
-
-                # Store the embedding
-                test_embedding = session.run(sigmoid_activations, feed_dict={all_samples: np.reshape(test_input, newshape=(-1, NUM_FEATURES))})
-                test_embedding = ((np.sign(test_embedding - 0.5) + 1) / 2)
-                test_embeddings = np.append(test_embeddings, test_embedding.astype(np.int8), axis=0)
-
-                # Store the label
-                test_single_labels = np.append(test_single_labels, [test_single_label, ], axis=0)
             start_idx = end_idx
+
+        out_dir = 'data/'
+        if not os.path.exists(out_dir):
+            os.mkdir(out_dir)
 
         np.save('data/test_labels.npy', test_single_labels)
         np.save('data/test_embeddings.npy', test_embeddings)
