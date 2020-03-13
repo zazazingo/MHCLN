@@ -76,7 +76,8 @@ def LeakyReLU(x, alpha=0.2):
     return tf.maximum(alpha*x, x)
 
 def main_network(inputs):
-    output = tf.reshape(inputs, shape=(-1, NUM_FEATURES, 1, 1))
+    #output = tf.reshape(inputs, shape=(-1, NUM_FEATURES, 1, 1))
+    output = tf.reshape(inputs, shape=(-1, 1, 1, NUM_FEATURES))
     output = lib.ops.conv2d.Conv2D(name='Classifier.Input', input_dim=NUM_FEATURES, output_dim=1024, filter_size=1, inputs=output, stride=1)
     output = LeakyReLU(output)
     output = lib.ops.conv2d.Conv2D(name='Classifier.2', input_dim=1024, output_dim=512, filter_size=1, inputs=output, stride=1)
