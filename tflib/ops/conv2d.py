@@ -108,7 +108,7 @@ def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
             filters=filters, 
             strides=[1, 1, stride, stride],
             padding='SAME',
-            data_format='NCHW'
+            data_format='NHWC'
         )
 
         if biases:
@@ -117,7 +117,7 @@ def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
                 np.zeros(output_dim, dtype='float32')
             )
 
-            result = tf.nn.bias_add(result, _biases, data_format='NCHW')
+            result = tf.nn.bias_add(result, _biases, data_format='NHWC')
 
 
         return result
