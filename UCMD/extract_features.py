@@ -1,5 +1,5 @@
 import os
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow.python.platform
 from tensorflow.python.platform import gfile
 import numpy as np
@@ -72,12 +72,12 @@ def generate_test_train_set(root_rgb):
     # data structure
     features = []
 
-    _, dirs, _ = os.walk(root_rgb).next()
+    _, dirs, _ = os.walk(root_rgb).__next__()
 
     for d in dirs:
         print('Reading %s' % d)
         img_dir = os.path.join(root_rgb, d)
-        _, _, rgb_files = os.walk(img_dir).next()
+        _, _, rgb_files = os.walk(img_dir).__next__()
 
         random.shuffle(rgb_files)
 
