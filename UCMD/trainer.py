@@ -11,6 +11,7 @@ np.random.seed(123)
 import warnings
 warnings.filterwarnings("ignore")
 import tensorflow as tf
+tf.compat.v1.disable_eager_execution()
 
 import tflib as lib
 import tflib.ops.linear
@@ -74,7 +75,8 @@ def LeakyReLU(x, alpha=0.2):
     return tf.maximum(alpha*x, x)
 
 def main_network(inputs):
-    output = tf.reshape(inputs, shape=(-1, NUM_FEATURES, 1, 1))
+    #output = tf.reshape(inputs, shape=(-1, NUM_FEATURES, 1, 1))
+    output = tf.reshape(inputs, shape=(-1, 1, 1, NUM_FEATURES))
     output = lib.ops.conv2d.Conv2D(name='Classifier.Input', input_dim=NUM_FEATURES, output_dim=1024, filter_size=1, inputs=output, stride=1)
     output = LeakyReLU(output)
     output = lib.ops.conv2d.Conv2D(name='Classifier.2', input_dim=1024, output_dim=512, filter_size=1, inputs=output, stride=1)
@@ -85,7 +87,7 @@ def main_network(inputs):
     return tf.reshape(output_sigmoid, shape=[-1, FLAGS.HASH_BITS])
 
 def triplet_loss(embeddings_0, anchor, positive, negative, alpha):
-    with tf.variable_scope('triplet_loss'):
+    with tf.compat.v1.variable_scope('triplet_loss'):
         pos_dist = tf.reduce_sum(tf.square(tf.subtract(anchor, positive)), 1)
         neg_dist = tf.reduce_sum(tf.square(tf.subtract(anchor, negative)), 1)
 
@@ -107,26 +109,26 @@ def train(self):
     nrof_samples_per_class = 100
     nrof_train_per_class = int(round(FLAGS.train_test_split * 100))
 
-    all_samples = tf.placeholder(tf.float32, shape=[None, NUM_FEATURES])
+    all_samples = tf.compat.v1.placeholder(tf.float32, shape=[None, NUM_FEATURES])
     sigmoid_activations = main_network(all_samples)
     embeddings = tf.nn.l2_normalize(sigmoid_activations, 1, 1e-10, name='embeddings')
     anchors, positives, negatives = tf.split(embeddings, 3, axis=0)
     loss = triplet_loss(sigmoid_activations, anchors, positives, negatives, FLAGS.ALPHA)
-    regularization_loss = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+    regularization_loss = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.REGULARIZATION_LOSSES)
     total_loss = tf.add_n([loss] + regularization_loss, name='total_loss')
 
-    train_op = tf.train.AdamOptimizer(learning_rate=1e-4, beta1=0.5, beta2=0.9).minimize(total_loss, var_list=lib.params_with_name('Classifier'))
+    train_op = tf.compat.v1.train.AdamOptimizer(learning_rate=1e-4, beta1=0.5, beta2=0.9).minimize(total_loss, var_list=lib.params_with_name('Classifier'))
 
-    config = tf.ConfigProto()
+    config = tf.compat.v1.ConfigProto()
     config.gpu_options.allow_growth = True
 
-    with tf.Session(config=config) as session:
-        session.run(tf.global_variables_initializer())
+    with tf.compat.v1.Session(config=config) as session:
+        session.run(tf.compat.v1.global_variables_initializer())
 
         for iters in range(FLAGS.ITERS):
 
             start_time = time.time()
-            triplets = get_triplets(train_data, train_labels, CLASSES, FLAGS.BATCH_SIZE/3)
+            triplets = get_triplets(train_data, train_labels, CLASSES, FLAGS.BATCH_SIZE//3)
             _, cost = session.run([train_op, total_loss], feed_dict={all_samples: triplets})
 
             lib.plot.plot('Triplet Loss', cost)
@@ -214,7 +216,7 @@ if __name__ == '__main__':
         help="Train test split ratio."
     )
     FLAGS, unparsed = parser.parse_known_args()
-    tf.app.run(main=train, argv=[sys.argv[0]] + unparsed)
+    tf.compat.v1.app.run(main=train, argv=[sys.argv[0]] + unparsed)
 
     train()
 
