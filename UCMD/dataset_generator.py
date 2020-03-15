@@ -78,7 +78,7 @@ if __name__ == '__main__':
         help="Train test split ratio."
     )
     FLAGS, unparsed = parser.parse_known_args()
-    tf.app.run(main=generate_train_test_set, argv=[sys.argv[0]] + unparsed)
+    tf.compat.v1.app.run(main=generate_train_test_set, argv=[sys.argv[0]] + unparsed)
 
     generate_train_test_set()
 
