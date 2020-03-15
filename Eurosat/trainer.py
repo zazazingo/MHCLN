@@ -193,7 +193,6 @@ def train(self):
                 test_single_labels = np.append(test_single_labels, [test_single_label, ], axis=0)
 
                 # Store the image
-                test_img_path = "../../" + test_img_path
                 img = Image.open(test_img_path)
                 img = img.resize([IMG_SIZE, IMG_SIZE], Image.ANTIALIAS)
                 img.save(os.path.join('dump_dir', 'temp.jpg'))
