@@ -172,6 +172,6 @@ if __name__ == '__main__':
         help="Interval of output images. Deafult 10"
     )
     FLAGS, unparsed = parser.parse_known_args()
-    tf.app.run(main=eval, argv=[sys.argv[0]] + unparsed)
+    tf.compat.v1.app.run(main=eval, argv=[sys.argv[0]] + unparsed)
 
     eval()
